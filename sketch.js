@@ -2,8 +2,12 @@ let writer =  p5.prototype.createWriter('output.txt');
 let stopExec = 0;
 writer.write(["humans","neighhbours","array length","density", 
               "speed\n"])
+// Change parameters here for initial setup.
+// nr_humans defines number of humans initially spawned
+// neighbour_distance defines initial euclidean distance in which to consider neighbours
+// separation_mult defines the multiplication of the separation force
 let Scene = {
-  w: 500, h : 500, swarm : [], t : 0, racetrack : 0, nr_humans : 100, neighbour_distance : 0,
+  w: 500, h : 500, swarm : [], t : 0, racetrack : 0, nr_humans : 100, neighbour_distance : 20, separation_mult : 30,
   neighbours : function (x){
     let r = []
     for (let p of this.swarm){
@@ -33,10 +37,15 @@ class Metrics{
 class RaceTrack{
   constructor(){
     this.centerpos = createVector(Scene.w/2, Scene.h/2)
+    // Defines the amplitude of the curves
     this.circleRadius = 58
+    // Defines the length of the straight parts of the racetrack
     this.lineLength = 80
+    // Defines the height of each of the straight parts of the racetrack
     this.racetrackHeight = 16
+    // Defines the distance between the curves to the right and left, respectivly
     this.racetrackWidth = 24
+    // Defines the width of the drawn racetrack lines
     this.width = 1
     let halfLineLength = this.lineLength/2
     
@@ -132,23 +141,25 @@ class Human{
         let away = p5.Vector.sub(this.pos,n.pos)
       away.div(away.magSq())
         avg_d.add(away)
+        avg_sin += Math.sin(n.dir.heading())
+        avg_cos += Math.cos(n.dir.heading())
       }
-      
-      avg_sin += Math.sin(n.dir.heading())
-      avg_cos += Math.cos(n.dir.heading())
       N++
     }
-    avg_sin /= N; avg_cos /=N; avg_p.div(N); avg_d.div(N); avg_d.mult(30)
+    avg_sin /= N; avg_cos /=N; avg_p.div(N); avg_d.div(N); avg_d.mult(Scene.separation_mult)
+    
+    let own_angle = Math.atan2(Math.sin(this.dir.heading()),
+                             Math.cos(this.dir.heading()))
     
     let avg_angle = Math.atan2(avg_sin, avg_cos)
     avg_angle += random(-0.25,0.25)
-    //this.dir = p5.Vector.fromAngle(avg_angle)
+    this.dir = p5.Vector.fromAngle(own_angle)
     
     let cohesion = p5.Vector.sub(avg_p, this.pos)
     cohesion.div(10)
     
     let racetrack_force = p5.Vector.sub(this.racetrack_force_vec(Scene.racetrack), this.pos)
-    racetrack_force.div(10)
+    racetrack_force.div(40)
     
     let clockwise_target = this.clockwise_force_vec(Scene.racetrack)
     let clockwise_distance = dist(this.pos.x, this.pos.y, clockwise_target.x, clockwise_target.y)
@@ -407,7 +418,9 @@ function getAvg(array){
   return (sum / array.length) || 0
 }
 
+// Defines the length of each experiment, currently 10s
 const Interval = setInterval(restart, 10000);
+// Defines the length of the whole simulation, currently 100s
 setTimeout(write, 100000);
 
 function restart() {
@@ -420,11 +433,16 @@ function restart() {
   writer.write([Scene.metrics.speedarray + "\n"])
   
   Scene.swarm = []
+  // Change parameter to add/substract humans in each experiment 
   Scene.nr_humans += 0
-  Scene.neighbour_distance +=5
+  // Change parameter to add/substract to the distance in which to consider neighbours
+  Scene.neighbour_distance +=0
+  // Change parameter to add/substract to separation multiplication parameter
+  Scene.separation_mult += 0
   setup(); // Call setup() function to restart the simulation
 }
 
+// Function to write out file at the end of the simulation
 function write(){
   // close the PrintWriter and save the file
   writer.close();
