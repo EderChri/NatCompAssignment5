@@ -167,10 +167,10 @@ class Human{
     clockwise_force.div(clockwise_distance)
     clockwise_force.div(10)
     
-    this.dir = clockwise_force
+    this.dir.add(clockwise_force)
     this.dir.add(racetrack_force)
     //ablation study: comment lines below
-    this.dir.add(p5.Vector.fromAngle(avg_angle))
+    //this.dir.add(p5.Vector.fromAngle(avg_angle))
     this.dir.add(cohesion)
     this.dir.add(avg_d)
     
